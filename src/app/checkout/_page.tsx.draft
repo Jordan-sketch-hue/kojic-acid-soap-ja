@@ -1,0 +1,148 @@
+'use client'
+
+import { useState } from 'react'
+import { useCart } from '@/lib/cart'
+import { formatJMD, generateOrderId, buildWiPayForm } from '@/lib/wipay'
+import { useRouter } from 'next/navigation'
+
+export default function CheckoutPage() {
+  const { items, total, clear } = useCart()
+  const router = useRouter()
+  const [form, setForm] = useState({ name: '', phone: '', address: '' })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const waText = encodeURIComponent(
+    `Hi! I'd like to order:\n${items.map(i => `• ${i.product.name} x${i.quantity} — ${formatJMD(i.product.price * i.quantity)}`).join('\n')}\n\nTotal: ${formatJMD(total)}\n\nName: ${form.name}\nPhone: ${form.phone}\nDelivery address: ${form.address}`
+  )
+
+  const handleWiPay = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.name || !form.phone) {
+      setError('Please fill in your name and phone number.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      const orderId = generateOrderId()
+      const res = await fetch('/api/wipay', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId,
+          items: items.map(i => ({ name: i.product.name, quantity: i.quantity, price: i.product.price })),
+          total,
+          customerName: form.name,
+          customerPhone: form.phone,
+        }),
+      })
+      const data = await res.json()
+      if (data.url) {
+        clear()
+        window.location.href = data.url
+      } else {
+        throw new Error(data.error || 'Payment initiation failed')
+      }
+    } catch (err: any) {
+      setError(err.message || 'Something went wrong. Please try WhatsApp.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-20 text-center">
+        <h1 className="font-playfair text-2xl font-bold mb-4">Your cart is empty</h1>
+        <a href="/shop" className="btn-primary px-8 py-3">Shop Now</a>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-10">
+      <h1 className="font-playfair text-3xl font-bold mb-8">Checkout</h1>
+      <div className="grid md:grid-cols-2 gap-10">
+
+        {/* Order Summary */}
+        <div className="bg-cream rounded-2xl p-6">
+          <h2 className="font-playfair text-lg font-semibold mb-4">Order Summary</h2>
+          <div className="space-y-3">
+            {items.map(({ product, quantity }) => (
+              <div key={product.id} className="flex justify-between text-sm">
+                <span>{product.name} × {quantity}</span>
+                <span className="font-medium">{formatJMD(product.price * quantity)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-bordeaux/10 mt-4 pt-4 flex justify-between font-bold">
+            <span>Total</span>
+            <span className="text-bordeaux text-xl">{formatJMD(total)}</span>
+          </div>
+          <p className="text-xs text-gray-400 mt-2">* Delivery fee calculated at payment</p>
+        </div>
+
+        {/* Contact Form */}
+        <div>
+          <form onSubmit={handleWiPay} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Full Name *</label>
+              <input
+                type="text"
+                required
+                value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-bordeaux"
+                placeholder="Your full name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Phone Number *</label>
+              <input
+                type="tel"
+                required
+                value={form.phone}
+                onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-bordeaux"
+                placeholder="(876) 000-0000"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Delivery Address</label>
+              <textarea
+                value={form.address}
+                onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-bordeaux resize-none"
+                rows={3}
+                placeholder="Street address, Town, Parish"
+              />
+            </div>
+
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full py-3 disabled:opacity-60"
+            >
+              {loading ? 'Redirecting to payment...' : `Pay ${formatJMD(total)} with Card`}
+            </button>
+          </form>
+
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-400 mb-3">— or —</p>
+            <a
+              href={`https://wa.me/18765120350?text=${waText}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full block text-center py-3 rounded-lg bg-[#25D366] text-white text-sm font-semibold hover:bg-[#128C7E] transition-colors"
+            >
+              Order via WhatsApp Instead
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
