@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { ShoppingBag, Check } from 'lucide-react'
 import { useState } from 'react'
 import type { Product } from '@/lib/products'
@@ -18,15 +19,13 @@ export default function ProductCard({ product }: { product: Product }) {
 
   return (
     <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-bordeaux/5">
-      <div className="aspect-square bg-cream overflow-hidden">
-        <img
+      <div className="aspect-square bg-cream overflow-hidden relative">
+        <Image
           src={product.image}
           alt={product.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-          onError={(e) => {
-            const el = e.target as HTMLImageElement
-            el.src = '/placeholder-product.jpg'
-          }}
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-500"
+          sizes="(max-width: 768px) 50vw, 25vw"
         />
       </div>
       <div className="p-4">

@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'd3u0tzju9qaucj.cloudfront.net' },
+      { protocol: 'https', hostname: 'scontent.cdninstagram.com' },
+    ],
+  },
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {

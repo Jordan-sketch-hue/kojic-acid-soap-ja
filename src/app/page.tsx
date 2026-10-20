@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { getFeatured } from '@/lib/products'
 import ProductCard from '@/components/ProductCard'
 
@@ -51,11 +52,15 @@ export default function HomePage() {
             </div>
           </div>
           <div className="hidden md:flex justify-center">
-            <div className="w-80 h-80 rounded-full flex items-center justify-center" style={{ background: 'rgba(123,45,62,0.08)' }}>
-              <div className="text-center p-8">
-                <div className="font-playfair text-2xl font-bold text-bordeaux mb-2">Kojic Glow</div>
-                <div className="text-sm text-gray-500">Authentic • Natural • Effective</div>
-              </div>
+            <div className="relative w-[420px] h-[420px] rounded-2xl overflow-hidden shadow-2xl">
+              <Image
+                src="/products/hero.jpg"
+                alt="Kojic Acid Soap JA — premium skincare products"
+                fill
+                className="object-cover"
+                priority
+                sizes="420px"
+              />
             </div>
           </div>
         </div>
